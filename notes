@@ -1,0 +1,36 @@
+still need to:
+-fix regex: making progress. Still: doesn't handle apostrophes or other special characters well (except is ok on -), includes end of sentence/beginning of next sentence (that one should be easy to fix!)
+
+-create visualizations
+-figure out Shiny
+
+
+
+-Who isn't getting GR hits? -mis-spellings, other issues
+
+-authdetails function choking on "E.O. Wilson" for some reason. Also need to figure out which is better, spaces or no spaces. Also how to work through a loop with input.
+
+xneed to account for case when GR search returns nothing - added line to authdetails function setting modalauthname to NA - not working??
+-need to account for case when GR search returns multiple authors with same name (didn't fix this yet, just manually changed the one that was causing the error) 
+
+-need to go in and clean up mismatches - flagged as matchOK==F
+
+
+
+Solved
+  
+-why is retrieval of stored xml objects crashing things - something about the pointers not pointing to the right place because of specification of environment? They are being created within the loop, I am using assign to create them in the global environment, but something is going awry
+-they exist and take up a tiny bit of space but pointers don't work. there's no data in them. (an empty list with the same characteristics is the same size) Need to redo all of it, figure out how to actually get the data stored.
+(x)removed all unstable xml objects (searchgr and authgr)
+-looks like just converting to character and then back again works - changed authdetails function to do that
+xadd in single data - done
+xstill need to edit "add new data" code so that single data will be added with new interviewees - done
+xfigure out character encoding
+  files pasted from web are UTF-8 (can see this at the bottom of the file in WordWrangler)
+  files created by python script are showing in WW as "Western (Mac OS Roman)"
+  If change this manually to UTF-8 and then specify encoding = "UTF-8" in read.csv, it works
+  need to figure out how to change the python script so they save as UTF-8
+  **gave up on this, doing it all in R which handles encoding better 
+
+
+

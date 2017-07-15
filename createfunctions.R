@@ -2,6 +2,7 @@ library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resourc
 library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
 library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
 nF<-function(x) {ifelse(is.na(x), F,x)}
+countN<-function(x) {as.integer(sum(!is.na(x)))}
 #function to:
 #search for author
 #grab author id
@@ -13,8 +14,18 @@ authdetails<-function(authname){
   #search for author's name to get goodreads ID
   searchgr<-read_xml(paste0("https://www.goodreads.com/search/index.xml?key=",grkey,"&q=",str_replace_all(string = authname,pattern = " ",replacement = "%20"),"&search[field]=author"))
   ids<-data_frame(id=as.numeric(xml_text(xml_find_all(searchgr,"//author//id"))),name=xml_text(xml_find_all(searchgr,"//author//name")))
-  #need to account for case where author name is not found
-  authID<-ifelse(length(unique(ids$id[which(ids$name==authname)]))==0,NA,unique(ids$id[which(ids$name==authname)]))
+#if the search comes up with nothing, nrow for ids is 0, set authID and modalauthname to 0; else pick one that matches name entered or most frequently appearing one; if the latter return warning
+  if(nrow(ids)==0){
+    authID<-NA
+    modalauthname<-NA} else{
+    modalauthname<-aggregate(id~name,ids,countN)[which.max(aggregate(id~name,ids,countN)[,2]),1]
+    if(length(unique(ids$id[which(ids$name==authname)]))==0){
+      warning(paste0(authname," no exact match; ",modalauthname," used"))
+      authID<-unique(ids$id[which(ids$name==modalauthname)])
+    } else{
+      authID<-unique(ids$id[which(ids$name==authname)]) 
+    }
+  }  
   #rest to prevent querying API too rapidly
   Sys.sleep(1.5)
   #get author page
@@ -31,11 +42,11 @@ authdetails<-function(authname){
     authtown<-NA
     Sys.sleep(1.5)
   }
-  #archive both
-  assign(x = paste0("searchgr",str_replace_all(string = authname,pattern = " ",replacement = "_")),value = searchgr,envir = .GlobalEnv)
-  assign(x = paste0("authgr",str_replace_all(string = authname,pattern = " ",replacement = "_")),value = authgr,envir = .GlobalEnv) 
+  #archive both - archiving as character; if need to use will have to use read_xml again
+assign(x = paste0("searchgr",str_replace_all(string = authname,pattern = " ",replacement = "_")),value = as.character(searchgr),envir = .GlobalEnv)
+assign(x = paste0("authgr",str_replace_all(string = authname,pattern = " ",replacement = "_")),value = as.character(authgr),envir = .GlobalEnv) 
   #return data frame
-  data_frame(name=authname,id=authID, gender=authgend, birthdate=authbirth, town=authtown)
+  data_frame(name=authname,id=authID, gender=authgend, birthdate=authbirth, town=authtown, GRname=ifelse(length(unique(ids$id[which(ids$name==authname)]))==0,modalauthname,as.character(authname)))
   
 }
 
@@ -69,7 +80,7 @@ GRdata$birthdate<-as.Date(GRdata$birthdate,format = "%Y/%m/%d")
 #add hand coded gender to GR data
 GRdata$input.gender<-authors$gender[match(GRdata$name,authors$name)]
 GRdata$input.gender[is.na(GRdata$input.gender)]<-interviewees$Subject.gender[match(GRdata$name[is.na(GRdata$input.gender)],interviewees$Subject)]
-GRdata$is.author
+
 
 #reconcile - pick GR data if conflicting
 GRdata$gender.use<-GRdata$input.gender
