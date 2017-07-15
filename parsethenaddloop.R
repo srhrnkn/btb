@@ -30,8 +30,7 @@ intervieweesnew<-intervieweesnew[which(!intervieweesnew$Subject %in% interviewee
 #wind up with list of author names, genders, interviewees
 
 authorsnew<-data.frame(name=character(),gender=character(),interviewee=character())
-#for(i in 1:length(intervieweesnew$Subject[i]))
-for(i in 2:3){
+for(i in 1:length(intervieweesnew$Subject)){
   #read in file 
   interviewee<-as.character(intervieweesnew$Subject[i])
   btblines<-readLines(con = paste0(interviewee,'.txt'),n = -1, encoding='UTF-8')
@@ -47,7 +46,7 @@ for(i in 2:3){
   print(paste0("New interviewee: ",interviewee))
   print("type gender; add slash at end if unsure or error in string")
   for(x in 1:length(btblines)){
-    tempmulti<-str_extract_all(string = btblines[x],pattern = "((?<![“])[A-Z][\\. ]?\\w+(?=[ \\’\\'-][A-Z][\\. ]?)(?:[\\s\\’\\'-][A-Z][\\. ]?[A-Z\\.?(\\w\\'+)-]+)+)")[[1]]
+    tempmulti<-str_extract_all(string = btblines[x],pattern = "((?<![“])([:upper:]{1}(\\. )?)+[:lower:]+(?=([ \\’\\'-][:upper:]{1}(\\. )?)+)(?:[\\s\\’\\'-][:upper:]{1}(\\. )?[[:upper:]{1}([:lower:]\\'+)-]+)+)")[[1]]
     tempmulti<-str_replace(string = tempmulti,pattern = "\\.$",replacement = "")
     multi<-c(multi,tempmulti)
   }
@@ -99,9 +98,6 @@ for(i in 1:length(fixnums)){
 authorsnew<-authorsnew[authorsnew$name!="",]
 
 
-# create data frame for use in next step
-
-
 ## not sure this is helping
 # #clean up initials - NYT uses space, GR does not
 # #one cause is spaces between initials, so can fix that before running GR lookups:
@@ -137,30 +133,29 @@ for (i in 1:length(authorstemp)){
   }
 }
 
+##quality control: find the sketchy GR matches (do this before btb merge)
+mismatches<-GRdata %>% filter(row(GRdata[,1])>GRdatarowcountold&GRdata$stringdistance>0)  %>% data.frame
+
+#if not too many, just eyeball and designate appropriately
+GRdata[which(GRdata$name %in% mismatches$name),"matchOK"]<-c(T,T,T,F,T,F,T,F,T,T)
+
+#or can use this:
+# #go through each level of distance and look for mismatches
+# i<-3 #starts at 3 - lower ok
+# mismatches[which(mismatches$stringdistance==i),] #look at mismatches at that level
+# mismatches$matchOK[which(mismatches$name=="")]<-F #set any that are wrong to F
+# mismatches$matchOK[which(mismatches$stringdistance==i&is.na(mismatches$matchOK))]<-T #set the rest at that level to T
+# i<-i+1 #increment up
+# #Then bring these designations back into GRdata
+# GRdata$matchOK[which(GRdata$name %in% mismatches$name)]<-mismatches$matchOK[match( GRdata$name[GRdata$name %in% mismatches$name],mismatches$name)]
+# #at some point clean these up, for now, throw them out at merge
+
 #add new interviewee and author names to crosswalk
 interviewees<-rbind(interviewees,intervieweesnew)
 authors<-rbind(authors,cbind(authorsnew, GRID=GRdata$id[match(authorsnew$name,GRdata$name)]))
 
-##quality control: find the sketchy GR matches (do this before btb merge)
 
-
-mismatches<-GRdata %>% filter(row(GRdata[,1])>GRdatarowcountold&GRdata$stringdistance>0)  %>% data.frame
-
-
-#then manually went through and checked for mismatches, using this code. or can just eyeball if not too many
-i<-3 #starts at 3 - lower ok
-mismatches[which(mismatches$stringdistance==i),] #look at mismatches at that level
-mismatches$matchOK[which(mismatches$name=="")]<-F #set any that are wrong to F
-mismatches$matchOK[which(mismatches$stringdistance==i&is.na(mismatches$matchOK))]<-T #set the rest at that level to T
-i<-i+1 #increment up
-#Then bring these designations back into GRdata
-GRdata$matchOK[which(GRdata$name %in% mismatches$name)]<-mismatches$matchOK[match( GRdata$name[GRdata$name %in% mismatches$name],mismatches$name)]
-#at some point clean these up, for now, throw them out at merge
-
-data.frame(cbind(GRdata[which(GRdata$name!=GRdata$GRname),c("name","id","GRname")],dist=stringdist(a = as.character(unlist(GRdata[which(GRdata$name!=GRdata$GRname),"name"])),b = as.character(unlist(GRdata[which(GRdata$name!=GRdata$GRname),"GRname"])))))[rev(order(stringdist(a = as.character(unlist(GRdata[which(GRdata$name!=GRdata$GRname),"name"])),b = as.character(unlist(GRdata[which(GRdata$name!=GRdata$GRname),"GRname"]))))),]
-
-
-#diff method by GR ID (omits anyone who wasn't a GR hit)
+#create dataset of authors & interviewees merging by GR ID (omits anyone who wasn't a GR hit)
 btb<-merge(authors[,c(3,4)],GRdata[which(GRdata$matchOK==T),c(1:2,4:5,9,10)],by.x = "GRID",by.y = "id")
 names(btb)[c(1,3:7)]<-paste0("author.",names(btb)[c(1,3:7)])
 names(btb)[2]<-"interviewee.name"

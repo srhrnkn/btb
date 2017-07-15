@@ -1,5 +1,6 @@
 still need to:
 -fix regex: making progress. Still: doesn't handle apostrophes or other special characters well (except is ok on -), includes end of sentence/beginning of next sentence (that one should be easy to fix!)
+-think through how handling author duplications - if author name doesn't match it adds a duplicate entry in GRdata. maybe this is good - have a record of all mappings between name-as-mentioned and GR name.
 
 -create visualizations
 -figure out Shiny
