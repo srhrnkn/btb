@@ -156,11 +156,13 @@ authors<-rbind(authors,cbind(authorsnew, GRID=GRdata$id[match(authorsnew$name,GR
 
 
 #create dataset of authors & interviewees merging by GR ID (omits anyone who wasn't a GR hit)
-btb<-merge(authors[,c(3,4)],GRdata[which(GRdata$matchOK==T),c(1:2,4:5,9,10)],by.x = "GRID",by.y = "id")
-names(btb)[c(1,3:7)]<-paste0("author.",names(btb)[c(1,3:7)])
+#need to make sure this is deduped by GRID
+btb<-merge(authors[,c(3,4)],GRdata[which(GRdata$matchOK==T),c(2,4:5,9,10)],by.x = "GRID",by.y = "id")
+names(btb)[c(1,3:6)]<-paste0("author.",names(btb)[c(1,3:6)])
 names(btb)[2]<-"interviewee.name"
 btb<-merge(btb,GRdata[,c(1:2,4:5,9,10)],by.x = "interviewee.name",by.y = "name",all.x = T,all.y = F)
-names(btb)[8:12]<-paste0("interviewee.",names(btb)[8:12])
+names(btb)[7:11]<-paste0("interviewee.",names(btb)[7:11])
+btb<-unique(btb)
 
 
 
