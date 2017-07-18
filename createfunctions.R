@@ -1,8 +1,12 @@
-library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
-library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
-library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
 nF<-function(x) {ifelse(is.na(x), F,x)}
 countN<-function(x) {as.integer(sum(!is.na(x)))}
+rmean<-function(x){mean(x,na.rm=T)}
+rmeanr<-function(x){round(mean(x,na.rm=T),2)}
+rmedian<-function(x){median(x,na.rm=T)}
+rsum<-function(x) {sum(x,na.rm=T)}
 #function to:
 #search for author
 #grab author id

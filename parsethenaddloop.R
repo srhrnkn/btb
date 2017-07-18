@@ -10,10 +10,10 @@
 #add goodreads to GRdata
 #create new btb analysis dataset
 
-library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
-library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
-library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
-library("stringdist", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("stringdist", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
 
 
 #####bring in new version of log, find new interviewee names
