@@ -151,7 +151,7 @@ GRdata[which(GRdata$name %in% mismatches$name),"matchOK"]<-c(T,T,T,F,T,F,T,F,T,T
 # #at some point clean these up, for now, throw them out at merge
 
 #add new interviewee and author names to crosswalk
-interviewees<-rbind(interviewees,intervieweesnew)
+interviewees<-rbind(interviewees,cbind(intervieweesnew,GRID=GRID=GRdata$id[match(intervieweesnew$Subject,GRdata$name)]))
 authors<-rbind(authors,cbind(authorsnew, GRID=GRdata$id[match(authorsnew$name,GRdata$name)]))
 
 
@@ -162,6 +162,7 @@ names(btb)[c(1,3:6)]<-paste0("author.",names(btb)[c(1,3:6)])
 names(btb)[2]<-"interviewee.name"
 btb<-merge(btb,GRdata[,c(1:2,4:5,9,10)],by.x = "interviewee.name",by.y = "name",all.x = T,all.y = F)
 names(btb)[7:11]<-paste0("interviewee.",names(btb)[7:11])
+btb<-merge(btb,interviewees[,c("GRID","Date")],by.x="interviewee.id",by.y="GRID")
 btb<-unique(btb)
 
 
