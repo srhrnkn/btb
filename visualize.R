@@ -12,7 +12,7 @@ btb %>% distinct(interviewee.GRname) %>% nrow()
 btb %>% distinct(author.GRname) %>% nrow()
 
 #count author mentions (descending)
-aggregate(interviewee.name~author.GRname,btb,countN)[rev(order(aggregate(interviewee.name~author.GRname,btb,countN)[,2])),]
+aggregate(interviewee.name~author.GRname,btb,countN)[rev(order(aggregate(interviewee.name~author.GRname,btb,countN)[,2])),][1:100,]
 
 #plot author mention counts
 hist(aggregate(interviewee.name~author.GRname,btb,countN)[rev(order(aggregate(interviewee.name~author.GRname,btb,countN)[,2])),2])
