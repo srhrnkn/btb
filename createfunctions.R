@@ -34,7 +34,7 @@ authdetails<-function(authname){
   Sys.sleep(1.5)
   #get author page
   if(!is.na(authID)){
-    authgr<-read_xml(paste0("https://www.goodreads.com/author/show/",authID,"?format=xml&key=SshlDssD6Elfx3hxbeo8g"))
+    authgr<-read_xml(paste0("https://www.goodreads.com/author/show/",authID,"?format=xml&key=",grkey))
     authgend<-xml_text(xml_find_all(authgr,"//author//gender"))
     authbirth<-xml_text(xml_find_all(authgr,"//author//born_at"))
     authtown<-xml_text(xml_find_all(authgr,"//author//hometown"))

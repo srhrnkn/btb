@@ -34,6 +34,7 @@ rsum<-function(x) {sum(x,na.rm=T)}
 #grab author page
 #archive author page
 #extract gender, birthdate, hometown and return as data frame row
+#!!requires object grkey - API authorization for GoodReads!!##
 authdetails<-function(authname){
   #search for author's name to get goodreads ID
   searchgr<-read_xml(paste0("https://www.goodreads.com/search/index.xml?key=",grkey,"&q=",str_replace_all(string = authname,pattern = " ",replacement = "%20"),"&search[field]=author"))
@@ -54,7 +55,7 @@ authdetails<-function(authname){
   Sys.sleep(1.5)
   #get author page
   if(!is.na(authID)){
-    authgr<-read_xml(paste0("https://www.goodreads.com/author/show/",authID,"?format=xml&key=SshlDssD6Elfx3hxbeo8g"))
+    authgr<-read_xml(paste0("https://www.goodreads.com/author/show/",authID,"?format=xml&key=",grkey))
     authgend<-xml_text(xml_find_all(authgr,"//author//gender"))
     authbirth<-xml_text(xml_find_all(authgr,"//author//born_at"))
     authtown<-xml_text(xml_find_all(authgr,"//author//hometown"))
@@ -224,7 +225,7 @@ btb<-unique(btb)
 #save btb so as to load in rmd file.  ####
 #save GRdata just for safekeeping
 save(btb,file = "btb.Rdata")
-save(GRdata,file="GRdata.Rdata")
+save(GRdata,file="GRdata.Rdata")  
 
 
 
