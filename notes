@@ -1,20 +1,16 @@
 still need to:
--fix regex: making progress. Still: doesn't handle apostrophes or other special characters well (except is ok on -), includes end of sentence/beginning of next sentence (that one should be easy to fix!)
--think through how handling author duplications - if author name doesn't match it adds a duplicate entry in GRdata. maybe this is good - have a record of all mappings between name-as-mentioned and GR name.
+-automate grabbing the text from the NYT site?
+-fix regex: mostly working; still doesn't do well on initials combined with end-of-name punctuation
+-think through how handling author duplications - if author name doesn't match it adds a duplicate entry in GRdata. maybe this is good - have a record of all mappings between name-as-mentioned and GR name. - currently handling this by deduping once create the btb object
 
--create visualizations
--figure out Shiny
-
+-more visualizations
+-figure out Shiny?
 
 
 -Who isn't getting GR hits? -mis-spellings, other issues
 
--authdetails function choking on "E.O. Wilson" for some reason. Also need to figure out which is better, spaces or no spaces. Also how to work through a loop with input.
-
-xneed to account for case when GR search returns nothing - added line to authdetails function setting modalauthname to NA - not working??
 -need to account for case when GR search returns multiple authors with same name (didn't fix this yet, just manually changed the one that was causing the error) 
 
--need to go in and clean up mismatches - flagged as matchOK==F
 
 
 
@@ -32,6 +28,7 @@ xfigure out character encoding
   If change this manually to UTF-8 and then specify encoding = "UTF-8" in read.csv, it works
   need to figure out how to change the python script so they save as UTF-8
   **gave up on this, doing it all in R which handles encoding better 
-
-
+xneed to go in and clean up mismatches - flagged as matchOK==F - added a process for that
+xneed to account for case when GR search returns nothing - added line to authdetails function setting modalauthname to NA - not working??
+xauthdetails function choking on "E.O. Wilson" for some reason. Also need to figure out which is better, spaces or no spaces. Also how to work through a loop with input.
 
