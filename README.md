@@ -7,4 +7,4 @@ The New York Times Book Review has a weekly interview feature called <a href="ht
 * `createfunctions.R`: defines functions
 * `summaryobjects.R`: creates summary objects for visualization
 * `btb.Rmd`: RMarkdown file to generate summary discussion & visualization
-* `btb.html`: output of above
+* `btb.html` & `btb.pdf`: output of above
