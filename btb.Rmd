@@ -1,6 +1,8 @@
 ---
 title: "BTB"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -38,41 +40,60 @@ byauth<-btb %>% group_by(author.GRname, author.gender.use,author.birthdate) %>% 
 
 #authors with more than three mentions by date of interview
 highfreqauthbydate<-btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>3]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+
+#colors for plots
+plotcolors<-data.frame(abbr=c("f","m"),adj=c("female","male"),noun=c("women","men"),color=c("#6e7684","#4661a0"),stringsAsFactors = F)
+
 ```
 
 
-New York Times By The Book interviews, `r paste0(as.character(month(min(byint$Date),label =  T,abbr = F))," ",day(min(byint$Date)),", ",year(min(byint$Date))," - ",as.character(month(max(byint$Date),label =  T,abbr = F))," ",day(max(byint$Date)),", ",year(max(byint$Date)))`
+New York Times By The Book interviews  
+`r paste0(as.character(month(min(byint$Date),label =  T,abbr = F))," ",day(min(byint$Date)),", ",year(min(byint$Date))," - ",as.character(month(max(byint$Date),label =  T,abbr = F))," ",day(max(byint$Date)),", ",year(max(byint$Date)))`
 
-Total interviews: `r nrow(byint)`  
-Total unique authors mentioned: `r nrow(byauth)`  
+Total interviews: **`r nrow(byint)`**  
+Total unique authors mentioned: **`r nrow(byauth)`**  
+  
+This data comes from the New York Times Book Review's "By the Book" feature - a weekly interview with a  literary figure in which the subject is asked a series of questions about their reading habits, past, present, and planned. The interviews yield a number of author and book recommendations - an average of **`r round(nrow(btb)/nrow(byint),)`** authors mentioned by name in each interview. This dataset is a result of some code that looks at the text of each interview, identifies strings of text that look like author names, verifies them by looking for corresponding names in the Goodreads author database. The gender information comes from the data in the Goodreads database, with missing data filled in manually.
+  
+  
+It's not a huge surprise that women are more likely to mention authors who are women and men are more likely to mention men. The ratios are striking: men are four times more likely to recommend authors of their own gender, whereas women only just make it past a 1:1 ratio.
 
-Top 21 authors mentioned:  
+```{r }
+#new
+btb %>% group_by(interviewee.gender.use) %>% count(author.gender.use) %>% mutate(grcount=sum(n),perc=n/grcount,percformat=paste0(100*round(perc,2),'%')) %>% ggplot(aes(x=interviewee.gender.use,y=n,fill=author.gender.use)) + 
+  geom_bar(stat = "identity",position = "fill") + geom_text(aes(label=paste0(percformat,"\n(",n,")")), position=position_fill(vjust=.5))+
+  scale_fill_manual(values = plotcolors$color,name="Authors mentioned: ",labels=plotcolors$noun,guide=guide_legend(reverse = T))  + scale_x_discrete(labels=paste0(plotcolors$adj," interviewees (",c(sum(byint$interviewee.gender.use=="f"), sum(byint$interviewee.gender.use=="m")),")")) + 
+  theme(axis.title=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.ticks.y = element_blank(),panel.background = element_rect(fill = NA),legend.direction = "horizontal",legend.position = "top",legend.justification = c(0, 0)) + 
+  coord_flip() +
+  theme(aspect.ratio = .3)
+
+
+
+```
+
+The chart below shows each interviewee and the number of authors they mentioned, plotting the authors  by gender.  
+
 ```{r}
-byauth %>% data.frame() %>% select(author=author.GRname,mentions=countment) %>% slice(1:21) %>% kable(align="lc",format = "html",table.attr = "style='width:30%;'")
+ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])),  aes(x = intervieweelevels)) +
+         geom_bar(aes(y=byint$countF),stat = "identity",fill=plotcolors$color[1]) +
+         geom_bar(aes(y=-1*byint$countM),stat = "identity",fill=plotcolors$color[2]) +
+  xlab("Interviewees") + ylab("Author mentions") +
+  scale_x_discrete(labels=paste(byint$interviewee.GRname[order(byint$countauth)],byint$countauth[order(byint$countauth)])) +
+  scale_y_continuous(breaks = seq(-40, 40, 20),
+                     labels = as.character(abs(seq(-40, 40, 20)))) +
+  coord_flip()
 ```
 
-Authors mentioned by gender of author & interviewee: 
-
-```{r fig.width=3}
-#authormentions by gender raw counts
-ggplot(btb,aes(x=interviewee.gender.use,fill=author.gender.use)) + geom_bar() + xlab("Interviewee gender") + ylab("authors mentioned")  + scale_fill_manual(values = c("darkgrey","lightgrey"),name="Author gender",labels=c("female","male")) + theme_bw() + scale_x_discrete(labels=paste0(levels(btb$interviewee.gender.use)," (",c(sum(byint$interviewee.gender.use=="f"), sum(byint$interviewee.gender.use=="m")),")"))
-
-
-#percentages
-
-ggplot(data.frame(sweep(x = table(btb$author.gender.use,btb$interviewee.gender.use,dnn = c("authors","interviewees")),MARGIN = 2,STATS = margin.table(table(btb$author.gender.use,btb$interviewee.gender.use),2),FUN = "/")),aes(x=interviewees,y=Freq,fill=authors)) + geom_bar(stat = "identity") + xlab("Interviewee gender") + scale_fill_manual(values = c("darkgrey","lightgrey"),name="Author gender",labels=c("male","female")) + theme_bw() + scale_x_discrete(labels=paste0(levels(btb$interviewee.gender.use)," (",c(sum(byint$interviewee.gender.use=="f"), sum(byint$interviewee.gender.use=="m")),")"))
-```
-
-Counts of author mentions by interviewee
-
-```{r}
-ggplot(btb %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])), aes(intervieweelevels)) + geom_bar(aes(fill = author.gender.use))  + theme(legend.position="none") + xlab("interviewee") + coord_flip()
-```
-
-Most mentioned authors by date mentioned
+This data has a long tail - there are **`r nrow(byauth)`** unique authors mentioned across the **`r nrow(byint)`** interviews, and **`r byauth %>% filter(countment==1) %>% nrow()`** of them are only mentioned once. The most frequently mentioned authors are mentioned by a fifth of all interviewees. The chart below shows the twenty most frequently mentioned authors, the number of times they were mentioned, and the dates they were mentioned. A longer time horizon might help us start to see patterns of trendy authors.
 
 ```{r}
 #higher frequency by date mentioned
-ggplot(highfreqauthbydate,aes(x=Date,y=author)) + geom_point(aes(color=interviewee.gender.use)) + theme(legend.position="none") #+ scale_y_discrete(breaks=1:length(levels(highfreqauthbydate$author)),labels=unique(paste0(highfreqauthbydate$author," (",highfreqauthbydate$countment,")")))
+ggplot(highfreqauthbydate,aes(x=Date,y=author)) + 
+  geom_point(aes(color=interviewee.gender.use)) + 
+  theme(legend.position="none",axis.title=element_blank(),axis.ticks = element_blank(),plot.title = element_text()) + 
+  scale_y_discrete(labels=rev(unique(paste0(highfreqauthbydate$author," (",highfreqauthbydate$countment,")")))) +  
+  scale_x_date(date_minor_breaks = "1 month") +
+  scale_color_manual(values=plotcolors$color) 
 ```
+
 
