@@ -1,8 +1,8 @@
 ---
 title: "BTB"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -94,6 +94,85 @@ ggplot(highfreqauthbydate,aes(x=Date,y=author)) +
   scale_y_discrete(labels=rev(unique(paste0(highfreqauthbydate$author," (",highfreqauthbydate$countment,")")))) +  
   scale_x_date(date_minor_breaks = "1 month") +
   scale_color_manual(values=plotcolors$color) 
+```
+
+
+```{r}
+#make df
+heatmapint <- btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>0]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+heatmapint <- full_join(x = heatmapint[,c("author","interviewee.GRname")],y = heatmapint[,c("author","interviewee.GRname")],by = "author" )
+#rearrange columns and delete entries where x and y are same 
+heatmapint$Weight<-1
+#heatmapint$Weight[which(heatmapint$interviewee.GRname.y==heatmapint$interviewee.GRname.x)]<-NA
+
+#set upper half to NA (getting rid of this, it's nice to be able to see full rows for everyone)
+#heatmapint$Weight[match(heatmapint$interviewee.x, heatmaplevels)<match(heatmapint$interviewee.y, heatmaplevels)]<-NA
+
+#data for plot - sum weight by interview mentions
+heatmapintplot<-heatmapint %>% group_by(interviewee.GRname.x,interviewee.GRname.y) %>% summarize(Weight=sum(Weight))
+#create levels to sort in order of most appearances (pull turns this back into a character vector)
+heatmapintlevels<-heatmapintplot  %>% group_by(interviewee.GRname.x) %>% summarize(n=max(Weight)) %>% arrange(desc(n)) %>% select(interviewee.GRname.x) %>% transmute(levels=as.character(interviewee.GRname.x)) %>% pull()
+heatmapintplot$interviewee.x<-factor(heatmapintplot$interviewee.GRname.x,levels = heatmapintlevels)
+heatmapintplot$interviewee.y<-factor(heatmapintplot$interviewee.GRname.y,levels = heatmapintlevels)
+#pull out total authors mentioned as separate character var to plot on diagonal
+heatmapintplot$authtotal<-as.character(heatmapintplot$Weight)
+heatmapintplot$authtotal[which(heatmapintplot$interviewee.y!=heatmapintplot$interviewee.x)]<-NA
+heatmapintplot$Weight[which(heatmapintplot$interviewee.y==heatmapintplot$interviewee.x)]<-NA
+```
+
+Below we can see instances where two interviewees mentioned the same author. Note that although some interviewees mentioned dozens of authors, the maximum overlap in authors mentioned between any two interviewees was `r max(heatmapintplot$Weight,na.rm=T)`.
+
+```{r fig.width = 9, fig.height = 9 }
+ggplot(heatmapintplot, aes(x = interviewee.x,y = interviewee.y)) + 
+  geom_tile(aes(fill = as.factor(Weight)),color="grey") +  
+  theme(axis.line = element_blank(), 
+        panel.background = element_rect(fill = "white"),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(angle = 75, hjust = 1)) +
+  scale_fill_brewer(palette = "Spectral",type = seq,direction = -1,guide = guide_legend(title = NULL)) +
+  coord_fixed() +
+  #geom_text(data = heatmapintplot$Weight[which(heatmapintplot$interviewee.x==heatmapintplot$interviewee.y)] ) +
+  geom_text(aes(label=authtotal),na.rm = T) +
+  ggtitle(label = "Count of authors mentioned in common by each pair of interviewees\n(Diagonal shows total authors mentioned by that interviewee)")
+```
+
+We can also see how many times pairs of authors were mentioned together in the same interview.
+
+```{r fig.width = 8, fig.height = 8 }
+
+#make df
+heatmapauth <- btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>3]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+heatmapauth <- full_join(x = heatmapauth[,c("author","interviewee.GRname")],y = heatmapauth[,c("author","interviewee.GRname")],by = "interviewee.GRname" )
+#rearrange columns and delete entries where x and y are same 
+heatmapauth$Weight<-1
+#heatmapauth$Weight[which(heatmapauth$author.y==heatmapauth$author.x)]<-NA
+heatmaplevels<-heatmapauth  %>% group_by(author.x) %>% tally() %>% arrange(desc(n)) %>% select(author.x) %>% transmute(levels=as.character(author.x)) %>% pull()
+heatmapauth$author.x<-factor(heatmapauth$author.x,levels = heatmaplevels)
+heatmapauth$author.y<-factor(heatmapauth$author.y,levels = heatmaplevels)
+#create levels to sort in order of most appearances (pull turns this back into a character vector)
+
+
+#set upper half to NA (getting rid of this, it's nice to be able to see full rows for everyone)
+#heatmapauth$Weight[match(heatmapauth$author.x, heatmaplevels)<match(heatmapauth$author.y, heatmaplevels)]<-NA
+
+heatmapauthplot<-heatmapauth %>% group_by(author.x,author.y) %>% summarise(Weight=sum(Weight))
+
+heatmapauthplot$mentiontotal<-as.character(heatmapauthplot$Weight)
+heatmapauthplot$mentiontotal[which(heatmapauthplot$author.y!=heatmapauthplot$author.x)]<-NA
+heatmapauthplot$Weight[which(heatmapauthplot$author.y==heatmapauthplot$author.x)]<-NA
+
+
+ggplot(heatmapauthplot, aes(x = author.x,y = author.y)) + 
+  geom_tile(aes(fill = as.factor(Weight)),color="white") + 
+  theme(axis.line = element_blank(), 
+        panel.background = element_rect(fill = "white"),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(angle = 75, hjust = 1)) +
+  scale_fill_brewer(palette = "Spectral",type = seq,direction = -1,guide = guide_legend(title = NULL)) +
+  coord_fixed() +
+  ggtitle(label = "Top authors: count of interview overlap") +
+  geom_text(aes(label=mentiontotal),na.rm = T)
+
 ```
 
 
