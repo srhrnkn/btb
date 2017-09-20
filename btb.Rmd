@@ -1,8 +1,10 @@
 ---
 title: "BTB"
 output:
-  pdf_document: default
+  md_document:
+    variant: markdown_github
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,9 +12,9 @@ knitr::opts_chunk$set(echo = F,message = F)
 ```
 
 ```{r load_packages}
-library("lubridate", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("knitr", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("lubridate")
+library("tidyverse")
+library("knitr")
 ```
 
 ```{r}
@@ -32,7 +34,7 @@ load(file = "/Users/srhrnkn/Documents/authors/btb.Rdata")
 
 ```{r create_objects}
 #summarize by interviewee: counts by gender, percents, bday, age
-byint<-btb %>% group_by(interviewee.GRname,interviewee.id, interviewee.gender.use,interviewee.birthdate.use,Date) %>% summarise(countF=rsum(author.gender.use=="f"),countM=rsum(author.gender.use=="m"),countauth=countN(author.gender.use=="f")) %>% mutate(percF=countF/countauth,age=as.period(interval(interviewee.birthdate.use,Sys.Date()))$year) %>% mutate(varf=(1-percF)/countauth) %>% arrange(percF)
+byint<-btb %>% group_by(interviewee.GRname,interviewee.id, interviewee.gender.use,interviewee.birthdate,Date) %>% summarise(countF=rsum(author.gender.use=="f"),countM=rsum(author.gender.use=="m"),countauth=countN(author.gender.use=="f")) %>% mutate(percF=countF/countauth,age=as.period(interval(interviewee.birthdate,Sys.Date()))$year) %>% mutate(varf=(1-percF)/countauth) %>% arrange(percF)
 
 
 #summarize by author: mentiongs, bday, age
@@ -42,45 +44,47 @@ byauth<-btb %>% group_by(author.GRname, author.gender.use,author.birthdate) %>% 
 highfreqauthbydate<-btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>3]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
 
 #colors for plots
-plotcolors<-data.frame(abbr=c("f","m"),adj=c("female","male"),noun=c("women","men"),color=c("#6e7684","#4661a0"),stringsAsFactors = F)
+plotcolors<-data.frame(abbr=c("f","m"),adj=c("female","male"),noun=c("women","men"),color=c("#a04646","#4661a0"),stringsAsFactors = F)
 
 ```
 
 
-New York Times By The Book interviews  
-`r paste0(as.character(month(min(byint$Date),label =  T,abbr = F))," ",day(min(byint$Date)),", ",year(min(byint$Date))," - ",as.character(month(max(byint$Date),label =  T,abbr = F))," ",day(max(byint$Date)),", ",year(max(byint$Date)))`
-
+## New York Times "By The Book" Interviews  
+Interview dates: **`r paste0(as.character(month(min(byint$Date),label =  T,abbr = F))," ",day(min(byint$Date)),", ",year(min(byint$Date))," - ",as.character(month(max(byint$Date),label =  T,abbr = F))," ",day(max(byint$Date)),", ",year(max(byint$Date)))`**  
 Total interviews: **`r nrow(byint)`**  
 Total unique authors mentioned: **`r nrow(byauth)`**  
   
-This data comes from the New York Times Book Review's "By the Book" feature - a weekly interview with a  literary figure in which the subject is asked a series of questions about their reading habits, past, present, and planned. The interviews yield a number of author and book recommendations - an average of **`r round(nrow(btb)/nrow(byint),)`** authors mentioned by name in each interview. This dataset is a result of some code that looks at the text of each interview, identifies strings of text that look like author names, verifies them by looking for corresponding names in the Goodreads author database. The gender information comes from the data in the Goodreads database, with missing data filled in manually.
+The New York Times Book Review's "By the Book" feature is a weekly interview exploring reading habits past, present, and planned. The interviews yield author recommendations - an average of **`r round(nrow(btb)/nrow(byint),)`** authors mentioned by name in each interview. The dataset analyzed below is a result of code that looks at the text of each interview, identifies strings of text that look like author names, and verifies them by looking for corresponding names in the Goodreads author database. The gender and birthdate information comes from the data in the Goodreads database, with missing data filled in from the authors' Wikipedia pages.
+
+### Gender
+
+Male interviewees are more likely to mention male authors.
   
   
-It's not a huge surprise that women are more likely to mention authors who are women and men are more likely to mention men. The ratios are striking: men are four times more likely to recommend authors of their own gender, whereas women only just make it past a 1:1 ratio.
+  
+  
 
 ```{r }
 #new
 btb %>% group_by(interviewee.gender.use) %>% count(author.gender.use) %>% mutate(grcount=sum(n),perc=n/grcount,percformat=paste0(100*round(perc,2),'%')) %>% ggplot(aes(x=interviewee.gender.use,y=n,fill=author.gender.use)) + 
-  geom_bar(stat = "identity",position = "fill") + geom_text(aes(label=paste0(percformat,"\n(",n,")")), position=position_fill(vjust=.5))+
+  geom_bar(stat = "identity",position = "fill",width = .5) + geom_text(aes(label=paste0(percformat,"\n(",n,")")), position=position_fill(vjust=.5))+
   scale_fill_manual(values = plotcolors$color,name="Authors mentioned: ",labels=plotcolors$noun,guide=guide_legend(reverse = T))  + scale_x_discrete(labels=paste0(plotcolors$adj," interviewees (",c(sum(byint$interviewee.gender.use=="f"), sum(byint$interviewee.gender.use=="m")),")")) + 
   theme(axis.title=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.ticks.y = element_blank(),panel.background = element_rect(fill = NA),legend.direction = "horizontal",legend.position = "top",legend.justification = c(0, 0)) + 
-  coord_flip() +
-  theme(aspect.ratio = .3)
+  coord_flip() #+
+  #theme(aspect.ratio = .3,plot.margin = unit(c(0,0,0,0),units = "pt"))
 
 
 
 ```
-
-Older interviewees are both more likely to be male (`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="m") %>%  select("interviewee.birthdate.use") %>% transmute(old=year(interviewee.birthdate.use)<1960) %>% pull())`% of male interviewees were born before 1960, vs `r 100*rmeanr(byint %>% filter(interviewee.gender.use=="f") %>%  select("interviewee.birthdate.use") %>% transmute(old=year(interviewee.birthdate.use)<1960) %>% pull())`% of female interviewees) and more likely to have recommended a lower percentage of female authors.
-
-```{r}
-ggplot(byint,aes(x=interviewee.birthdate.use,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() +scale_color_manual(values=plotcolors$color, name="interviewee\ngender") + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)})
-```
-
-
-
-The chart below shows each interviewee and the number of authors they mentioned, plotting the authors  by gender.  
-
+  
+  
+  
+  
+But there is plenty of variation among interviewees in the total number of authors mentioned & in the gender split. 
+  
+  
+  
+  
 ```{r}
 ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])),  aes(x = intervieweelevels)) +
          geom_bar(aes(y=byint$countF),stat = "identity",fill=plotcolors$color[1]) +
@@ -91,9 +95,29 @@ ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint
                      labels = as.character(abs(seq(-40, 40, 20)))) +
   coord_flip()
 ```
+  
+  
+  
+  
+Older interviewees are both more likely to be male (**`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="m") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of male interviewees were born before 1960, vs **`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="f") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of female interviewees) and more likely to have recommended a lower percentage of female authors. 
+  
+  
+  
+  
+```{r warning=F}
+ggplot(byint,aes(x=interviewee.birthdate,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() +scale_color_manual(values=plotcolors$color, name="interviewee\ngender") + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)},limits = c(0,1))
+```
 
-This data has a long tail - there are **`r nrow(byauth)`** unique authors mentioned across the **`r nrow(byint)`** interviews, and **`r byauth %>% filter(countment==1) %>% nrow()`** of them are only mentioned once. The most frequently mentioned authors are mentioned by a fifth of all interviewees. The chart below shows the twenty most frequently mentioned authors, the number of times they were mentioned, and the dates they were mentioned. A longer time horizon might help us start to see patterns of trendy authors.
 
+
+
+###Frequently mentioned authors
+
+This data has a long tail - there are **`r nrow(byauth)`** unique authors mentioned across the **`r nrow(byint)`** interviews, and **`r byauth %>% filter(countment==1) %>% nrow()`** of them are only mentioned once. The most frequently mentioned authors are mentioned by a fifth of all interviewees. The chart below shows the most frequently mentioned authors, the number of times they were mentioned, and the dates they were mentioned. 
+  
+  
+  
+  
 ```{r}
 #higher frequency by date mentioned
 ggplot(highfreqauthbydate,aes(x=Date,y=author)) + 
@@ -127,9 +151,15 @@ heatmapintplot$authtotal<-as.character(heatmapintplot$Weight)
 heatmapintplot$authtotal[which(heatmapintplot$interviewee.y!=heatmapintplot$interviewee.x)]<-NA
 heatmapintplot$Weight[which(heatmapintplot$interviewee.y==heatmapintplot$interviewee.x)]<-NA
 ```
-
-Below we can see instances where two interviewees mentioned the same author. Note that although some interviewees mentioned dozens of authors, the maximum overlap in authors mentioned between any two interviewees was `r max(heatmapintplot$Weight,na.rm=T)`.
-
+  
+  
+  
+  
+Below we can see instances where two interviewees mentioned the same author. Note that although some interviewees mentioned dozens of authors, the maximum overlap in authors mentioned between any two interviewees was **`r max(heatmapintplot$Weight,na.rm=T)`**.
+  
+  
+  
+  
 ```{r fig.width = 9, fig.height = 9 }
 ggplot(heatmapintplot, aes(x = interviewee.x,y = interviewee.y)) + 
   geom_tile(aes(fill = as.factor(Weight)),color="grey") +  
@@ -137,15 +167,21 @@ ggplot(heatmapintplot, aes(x = interviewee.x,y = interviewee.y)) +
         panel.background = element_rect(fill = "white"),
         axis.ticks = element_blank(),
         axis.text.x = element_text(angle = 75, hjust = 1)) +
-  scale_fill_brewer(palette = "Spectral",type = seq,direction = -1,guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = c("#bcb8b1","#c9b38d","#cc9943","#d8911a","#f29b09","white"),guide = guide_legend(title = NULL)) +
   coord_fixed() +
   #geom_text(data = heatmapintplot$Weight[which(heatmapintplot$interviewee.x==heatmapintplot$interviewee.y)] ) +
   geom_text(aes(label=authtotal),na.rm = T) +
   ggtitle(label = "Count of authors mentioned in common by each pair of interviewees\n(Diagonal shows total authors mentioned by that interviewee)")
 ```
-
+  
+  
+  
+  
 We can also see how many times pairs of authors were mentioned together in the same interview.
-
+  
+  
+  
+  
 ```{r fig.width = 8, fig.height = 8 }
 
 #make df
@@ -176,9 +212,9 @@ ggplot(heatmapauthplot, aes(x = author.x,y = author.y)) +
         panel.background = element_rect(fill = "white"),
         axis.ticks = element_blank(),
         axis.text.x = element_text(angle = 75, hjust = 1)) +
-  scale_fill_brewer(palette = "Spectral",type = seq,direction = -1,guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = c("#bcb8b1","#c9b38d","#cc9943","#d8911a","white"),guide = guide_legend(title = NULL)) +
   coord_fixed() +
-  ggtitle(label = "Top authors: count of interview overlap") +
+  ggtitle(label = "Top authors: count of interview overlap\n(Diagonal shows total times author was mentioned)") +
   geom_text(aes(label=mentiontotal),na.rm = T)
 
 ```
