@@ -108,6 +108,7 @@ wikigetdata<-function(namevector){
             }
             else {
               table<-tables[[wikibiotablenum(wikifull)]] %>%  html_table(fill = T)
+              table<-table[,1:2]
               names(table)<-c("item","data")
               birthdate<-table %>% filter(item=="Born") %>% select(data) %>% str_extract(pattern = "\\d+-\\d+-\\d+") %>% parse_date_time("ymd") %>% as.Date()
             }
@@ -234,7 +235,7 @@ fixnums<-grep("/",authorsnew$isauth)
 #loop through flagged entries and prompt for name,gender string - separated by comma, no quotes
 print("for each author enter correct name, no quotes")
 for(i in 1:length(fixnums)){
-  tempfix<-readline(prompt = paste(authorsnew[fixnums[i],],collapse = " "))
+  tempfix<-readline(prompt = paste0(authorsnew$name[fixnums[i]], " "))
   authorsnew$name[fixnums[i]]<-tempfix
   authorsnew$isauth[fixnums[i]]<-"y"
 }
