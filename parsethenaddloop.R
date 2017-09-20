@@ -331,8 +331,9 @@ if(exists("savenum")){
 
 save(btb,file = "btb.Rdata")
 save(btb,file = paste0("btb",as.character(savenum),".Rdata"))
-save(GRdata,"GRdata.Rdata")  
+save(GRdata,file = "GRdata.Rdata")  
 save(GRdata,file= paste0("GRdata",as.character(savenum),".Rdata"))  
+save(wikinew,file= paste0("wikinew",as.character(savenum),".Rdata")) 
 save(list = apropos("authgr"),file = paste0("authgr",as.character(savenum),".Rdata"))
 save(list = apropos("searchgr"),file = paste0("searchgr",as.character(savenum),".Rdata"))
 save(list = apropos("wikifull"),file = paste0("wikifull",as.character(savenum),".Rdata"))
