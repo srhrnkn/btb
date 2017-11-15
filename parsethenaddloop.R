@@ -1,11 +1,12 @@
 #this script looks for new BTB interviews and adds them to the dataset
-#simplified to stop manually inputting gender info - just asks if it's an author or not, then gets the gender data from wikipedia
+#simplified to stop manually inputting gender info - just asks if it's an author or not, then gets the gender data from wikipedia (with final manual input step)
+#altered beginning to automate process of getting data from NYTimes site
 
 #General outline:
-#bring in new version of interviewee log
+#visit btb page at NYTimes.com, get names and links
 #hit against current list to look for new interviewees
 #for each new interviewee
-#bring in text file 
+#scrape interview page
 #look for potential author names
 #loop through names and flag if real name, flag text errrs
 #loop through errors & fix
@@ -159,10 +160,19 @@ wikibiotablenum<- function(pagecontent){
 
 
 
-# bring in new version of log, find new interviewee names ####
-intervieweesnew<-read.csv("logscripted.csv")
-intervieweesnew$Date<-as.Date(x = intervieweesnew$Date,format = "%b. %d, %Y")
-intervieweesnew<-intervieweesnew[which(!intervieweesnew$Subject %in% interviewees$Subject),]
+
+#look at main btb page, get new interviews and links
+btbcolumn<-read_html("https://www.nytimes.com/column/by-the-book")
+headlines <- btbcolumn %>% html_nodes(css = ".headline") %>% html_text(trim = T)
+dates <- btbcolumn %>% html_nodes(css = ".dateline") %>% html_text(trim = T)
+dates <-as.Date(dates , format = "%b. %d, %Y")
+links <- btbcolumn %>% html_nodes(css = ".story-link") %>% html_attr(name = "href")
+btbnames<-str_replace(headlines,": By the Book","")
+isnew<-!btbnames %in% interviewees$Subject
+btbnewcols<-data.frame(Date=dates,Link=links, Subject=btbnames,isnew)
+btbnewcols<-unique(btbnewcols[(btbnewcols$isnew),])
+#order by date so adding older interviews first
+btbnewcols<-btbnewcols[order(btbnewcols$Date),]
 
 # read in text files & parse ####
 #for each interviewee:
@@ -172,11 +182,24 @@ intervieweesnew<-intervieweesnew[which(!intervieweesnew$Subject %in% interviewee
 #store issues for further look
 #wind up with list of author names, genders, interviewees
 
+##make intervieweesnew data frame because that was already used in the code. Need to loop through and add gender because that had been added in the excel file. Other fields aren't being used but are left over - could clean this up at some point.
+
+intervieweesnew<-data.frame(btbnewcols[,c("Date","Subject")],Subject.gender = NA, Count.Authors = NA,Count.Female.Authors= NA, Count.Male.Authors= NA, printoronline = "online",Notes = NA)
+print("New interviewees: type f or m")
+for(i in 1:nrow(intervieweesnew)){
+  intervieweesnew[i,3]<-readline(prompt = paste0(intervieweesnew[i,2]," "))
+}
+
+#now back on track, except this code is changed to hit the link directly and to save to a text file
+
 authorsnew<-data.frame(name=character(),isauth=character(),interviewee=character())
+
 for(i in 1:length(intervieweesnew$Subject)){
-  #read in file 
+  #read in file & save
   interviewee<-as.character(intervieweesnew$Subject[i])
-  btblines<-readLines(con = paste0(interviewee,'.txt'),n = -1, encoding='UTF-8')
+  btblines<-read_html(as.character(btbnewcols$Link[i]))
+  btblines<-btblines %>% html_nodes(css = ".story-body-text") %>% html_text()
+  writeLines(text = btblines, con = paste0(btbnewcols$Subject[i],".txt"))
   
   #use regex to find potential author names
   
@@ -282,6 +305,12 @@ mismatches<-GRdata %>% filter(row(GRdata[,1])>GRdatarowcountold&GRdata$stringdis
 
 #if not too many, just eyeball and designate appropriately
 GRdata[which(GRdata$name %in% mismatches$name),"matchOK"]<-c()
+
+#manually fix the ones where the search just went wonky
+fixname<-#name to fix
+newlookup<-#new string to use for lookup
+GRdata[which(GRdata$name==fixname),c("id","gender","birthdate","town","GRname")]<-authdetails(newlookup)[,2:6]
+GRdata$matchOK[which(GRdata$name==fixname)]<-T
 
 #get wikipedia gender###
 wikinew<-wikigetdata(namevector = GRdata$GRname[(GRdatarowcountold+1):length(GRdata$GRname)])
