@@ -53,7 +53,9 @@ sixoranges<-oranges(6)
 
 ## New York Times "By The Book" Interviews  
 Interview dates: **`r paste0(as.character(month(min(byint$Date),label =  T,abbr = F))," ",day(min(byint$Date)),", ",year(min(byint$Date))," - ",as.character(month(max(byint$Date),label =  T,abbr = F))," ",day(max(byint$Date)),", ",year(max(byint$Date)))`**  
+
 Total interviews: **`r nrow(byint)`**  
+
 Total unique authors mentioned: **`r nrow(byauth)`**  
   
 The New York Times Book Review's "By the Book" feature is a weekly interview exploring reading habits past, present, and planned. The interviews yield author recommendations - an average of **`r round(nrow(btb)/nrow(byint),)`** authors mentioned by name in each interview. The dataset analyzed below is a result of code that looks at the text of each interview, identifies strings of text that look like author names, and verifies them by looking for corresponding names in the Goodreads author database. The gender and birthdate information comes from the data in the Goodreads database, with missing data filled in from the authors' Wikipedia pages.

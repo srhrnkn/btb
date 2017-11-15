@@ -2,7 +2,9 @@ New York Times "By The Book" Interviews
 ---------------------------------------
 
 Interview dates: **December 1, 2016 - November 9, 2017**
+
 Total interviews: **49**
+
 Total unique authors mentioned: **1197**
 
 The New York Times Book Review's "By the Book" feature is a weekly interview exploring reading habits past, present, and planned. The interviews yield author recommendations - an average of **32** authors mentioned by name in each interview. The dataset analyzed below is a result of code that looks at the text of each interview, identifies strings of text that look like author names, and verifies them by looking for corresponding names in the Goodreads author database. The gender and birthdate information comes from the data in the Goodreads database, with missing data filled in from the authors' Wikipedia pages.
