@@ -24,6 +24,7 @@ rmean<-function(x){mean(x,na.rm=T)}
 rmeanr<-function(x){round(mean(x,na.rm=T),2)}
 rmedian<-function(x){median(x,na.rm=T)}
 rsum<-function(x) {sum(x,na.rm=T)}
+
 ```
 
 
@@ -45,7 +46,8 @@ highfreqauthbydate<-btb %>%  filter(author.GRname %in% byauth$author.GRname[byau
 
 #colors for plots
 plotcolors<-data.frame(abbr=c("f","m"),adj=c("female","male"),noun=c("women","men"),color=c("#a04646","#4661a0"),stringsAsFactors = F)
-
+oranges<-colorRampPalette(c("grey","orange"))
+sixoranges<-oranges(6)
 ```
 
 
@@ -167,7 +169,7 @@ ggplot(heatmapintplot, aes(x = interviewee.x,y = interviewee.y)) +
         panel.background = element_rect(fill = "white"),
         axis.ticks = element_blank(),
         axis.text.x = element_text(angle = 75, hjust = 1)) +
-  scale_fill_manual(values = c("#bcb8b1","#c9b38d","#cc9943","#d8911a","#f29b09","white"),guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = c(sixoranges,"white"),guide = guide_legend(title = NULL)) +
   coord_fixed() +
   #geom_text(data = heatmapintplot$Weight[which(heatmapintplot$interviewee.x==heatmapintplot$interviewee.y)] ) +
   geom_text(aes(label=authtotal),na.rm = T) +
@@ -212,7 +214,7 @@ ggplot(heatmapauthplot, aes(x = author.x,y = author.y)) +
         panel.background = element_rect(fill = "white"),
         axis.ticks = element_blank(),
         axis.text.x = element_text(angle = 75, hjust = 1)) +
-  scale_fill_manual(values = c("#bcb8b1","#c9b38d","#cc9943","#d8911a","white"),guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = c(sixoranges[1:5],"white"),guide = guide_legend(title = NULL)) +
   coord_fixed() +
   ggtitle(label = "Top authors: count of interview overlap\n(Diagonal shows total times author was mentioned)") +
   geom_text(aes(label=mentiontotal),na.rm = T)
