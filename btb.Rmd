@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = F,message = F)
 library("lubridate")
 library("tidyverse")
 library("knitr")
+library("gridExtra")
 ```
 
 ```{r}
@@ -62,11 +63,11 @@ The New York Times Book Review's "By the Book" feature is a weekly interview exp
 
 ### Gender
 
-Male interviewees are more likely to mention male authors.
-  
-  
-  
-  
+There were a total of **`r rsum(byint$interviewee.gender.use=="f")`** female interviewees and **`r rsum(byint$interviewee.gender.use=="m")`** male interviewees. 
+
+
+Male interviewees are more likely to mention male authors. Female interviewees mention men and women at about the same rate.
+
 
 ```{r }
 #new
@@ -84,7 +85,7 @@ btb %>% group_by(interviewee.gender.use) %>% count(author.gender.use) %>% mutate
   
   
   
-But there is plenty of variation among interviewees in the total number of authors mentioned & in the gender split. 
+But there is wide variation among interviewees in the total number of authors mentioned & in the gender split. 
   
   
   
@@ -126,7 +127,7 @@ This data has a long tail - there are **`r nrow(byauth)`** unique authors mentio
 #higher frequency by date mentioned
 ggplot(highfreqauthbydate,aes(x=Date,y=author)) + 
   geom_point(aes(color=interviewee.gender.use)) + 
-  theme(legend.position="top",legend.direction = "horizontal",legend.justification = c(0, 0),axis.title=element_blank(),axis.ticks = element_blank(),plot.title = element_text()) + 
+  theme(legend.position="top",legend.direction = "horizontal",legend.justification = c(0, 0),axis.title=element_blank(),axis.ticks = element_blank(),plot.title = element_text(),aspect.ratio = 1.2) + 
   scale_y_discrete(labels=rev(unique(paste0(highfreqauthbydate$author," (",highfreqauthbydate$countment,")")))) +  
   scale_x_date(date_minor_breaks = "1 month") +
   scale_color_manual(values=plotcolors$color,name="Date mentioned; gender of interviewee:") 
