@@ -223,7 +223,7 @@ for(i in 1:length(intervieweesnew$Subject)){
     single<-c(single,tempsingle[unlist(lapply(X = tempsingle,FUN = function(x){max(grepl(pattern = x,x = multi))}))==0])
   }
   
-  #var to store genders
+  #var to store input data: is this an author name?
   isauth = character()
   
   #loop through multi and register authorness
@@ -239,7 +239,7 @@ for(i in 1:length(intervieweesnew$Subject)){
   #for single just view and tag any that are real
   singleisauth = character()
   print(single)
-  singleindices<-readline(prompt = "Which items are authors? enter index numbers separated by spaces")
+  singleindices<-readline(prompt = "Which items are authors? enter index numbers separated by spaces ")
   singleindices<-as.integer(unlist(str_split(string = singleindices," ")))
   print("Enter y if author name ok, / if needs editing")
   for(x in 1:length(singleindices)){
@@ -342,7 +342,7 @@ authors<-rbind(authors,cbind(authorsnew[,c(1,3:4)], GRID=GRdata$id[match(authors
 
 #create dataset of authors & interviewees merging by GR ID (omits anyone who wasn't a GR hit) ####
 #could prob redo this with dplyr
-btb<-merge(authors[,c(3,4)],GRdata[which(GRdata$matchOK==T),c(2,4:5,9,10)],by.x = "GRID",by.y = "id")
+btb<-merge(authors[,c(3,4)],GRdata[which(GRdata$matchOK==T&!is.na(GRdata$gender.use)),c(2,4:5,9,10)],by.x = "GRID",by.y = "id")
 names(btb)[c(1,3:6)]<-paste0("author.",names(btb)[c(1,3:6)])
 names(btb)[2]<-"interviewee.name"
 btb<-merge(btb,GRdata[,c(1:2,4:5,9,10)],by.x = "interviewee.name",by.y = "name",all.x = T,all.y = F)
@@ -361,7 +361,9 @@ if(exists("savenum")){
 save(btb,file = "btb.Rdata")
 save(btb,file = paste0("btb",as.character(savenum),".Rdata"))
 save(GRdata,file = "GRdata.Rdata")  
-save(GRdata,file= paste0("GRdata",as.character(savenum),".Rdata"))  
+save(GRdata,file= paste0("GRdata",as.character(savenum),".Rdata")) 
+save(authors,file = "authors.Rdata")  
+save(authors,file= paste0("authors",as.character(savenum),".Rdata"))  
 save(wikinew,file= paste0("wikinew",as.character(savenum),".Rdata")) 
 save(list = apropos("authgr"),file = paste0("authgr",as.character(savenum),".Rdata"))
 save(list = apropos("searchgr"),file = paste0("searchgr",as.character(savenum),".Rdata"))
