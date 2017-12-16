@@ -65,6 +65,23 @@ The New York Times Book Review's "By the Book" feature is a weekly interview exp
 
 There were a total of **`r rsum(byint$interviewee.gender.use=="f")`** female interviewees and **`r rsum(byint$interviewee.gender.use=="m")`** male interviewees. 
 
+```{r}
+
+caldata<- byint %>%  arrange(Date) %>% mutate(m=month(Date),d=day(Date),y=year(Date),rnk=rank(Date)) %>% group_by(m) %>% mutate(week=rank(rnk))
+caldata$monthlabel<-month.abb[caldata$m]
+caldata$monthlabel[caldata$m==lag(caldata$m)]<-""
+
+ggplot(data =caldata ) + 
+  geom_tile(aes(fill = interviewee.gender.use,x=1,y=rev(rnk)),color="black")  + 
+  theme_classic() + theme(aspect.ratio = 3,axis.ticks = element_blank(),line = element_blank(),axis.title.x = element_blank(),axis.text.x = element_blank()) + 
+  scale_y_continuous(breaks = caldata$rnk,labels=rev(paste(caldata$monthlabel,as.character(caldata$d))),name = element_blank()) + guides(fill=F) + 
+  scale_fill_manual(values = plotcolors$color) +
+  geom_text(aes(x=1,y=rev(rnk),label=interviewee.GRname)) + 
+  facet_wrap(~rnk>length(rnk)/2,nrow = 1,ncol = 2,scales = "free") + 
+  theme(strip.background = element_blank(),  strip.text.x = element_blank()
+)
+```
+
 
 Male interviewees are more likely to mention male authors. Female interviewees mention men and women at about the same rate.
 
