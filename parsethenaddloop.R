@@ -18,14 +18,14 @@
 #merge GRdata and author/interview listing to create new btb analysis dataset with interviewee & author 
 
 #load libraries ####
-library("xml2", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("tidyverse", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("lubridate", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("stringdist", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("stringr", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("rvest", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("WikipediR", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
-library("tidytext", lib.loc="/Library/Frameworks/R.framework/Versions/3.4/Resources/library")
+library("xml2")
+library("tidyverse")
+library("lubridate")
+library("stringdist")
+library("stringr")
+library("rvest")
+library("WikipediR")
+library("tidytext")
 
 #create functions ####
 nF<-function(x) {ifelse(is.na(x), F,x)}
@@ -161,7 +161,7 @@ wikibiotablenum<- function(pagecontent){
 
 
 
-#look at main btb page, get new interviews and links
+#look at main btb page, get new interviews and links####
 btbcolumn<-read_html("https://www.nytimes.com/column/by-the-book")
 headlines <- btbcolumn %>% html_nodes(css = ".headline") %>% html_text(trim = T)
 dates <- btbcolumn %>% html_nodes(css = ".dateline") %>% html_text(trim = T)
@@ -264,6 +264,9 @@ for(i in 1:length(fixnums)){
 }
 #delete any blank lines
 authorsnew<-authorsnew[authorsnew$name!=""&authorsnew$isauth!="",]
+#get rid of dupes
+authorsnew<-unique(authorsnew)
+
 
 #hit goodreads for data re new interviewees and new authors, add to GRdata ####
 
@@ -306,13 +309,13 @@ mismatches<-GRdata %>% filter(row(GRdata[,1])>GRdatarowcountold&GRdata$stringdis
 #if not too many, just eyeball and designate appropriately
 GRdata[which(GRdata$name %in% mismatches$name),"matchOK"]<-c()
 
-#manually fix the ones where the search just went wonky
+#manually fix the ones where the search just went wonky####
 fixname<-#name to fix
 newlookup<-#new string to use for lookup
 GRdata[which(GRdata$name==fixname),c("id","gender","birthdate","town","GRname")]<-authdetails(newlookup)[,2:6]
 GRdata$matchOK[which(GRdata$name==fixname)]<-T
 
-#get wikipedia gender###
+#get wikipedia gender####
 wikinew<-wikigetdata(namevector = GRdata$GRname[(GRdatarowcountold+1):length(GRdata$GRname)])
 
 
@@ -364,6 +367,8 @@ save(GRdata,file = "GRdata.Rdata")
 save(GRdata,file= paste0("GRdata",as.character(savenum),".Rdata")) 
 save(authors,file = "authors.Rdata")  
 save(authors,file= paste0("authors",as.character(savenum),".Rdata"))  
+save(interviewees,file = "interviewees.Rdata")  
+save(interviewees,file= paste0("interviewees",as.character(savenum),".Rdata"))  
 save(wikinew,file= paste0("wikinew",as.character(savenum),".Rdata")) 
 save(list = apropos("authgr"),file = paste0("authgr",as.character(savenum),".Rdata"))
 save(list = apropos("searchgr"),file = paste0("searchgr",as.character(savenum),".Rdata"))
