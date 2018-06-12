@@ -1,0 +1,128 @@
+---
+title: 'Who Reads Whom: Text Mining Literary Interviews'
+author: "Sarah Rankin"
+date: "6/14/2018"
+output:
+  ioslides_presentation: default
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,message = F,warning = F,cache = T)
+```
+
+```{r load_packages}
+library("lubridate")
+library("tidyverse")
+library("knitr")
+library("gridExtra")
+```
+
+
+```{r load_data}
+load(file = "/Users/srhrnkn/Documents/authors/btb.Rdata")
+```
+
+```{r}
+nF<-function(x) {ifelse(is.na(x), F,x)}
+countN<-function(x) {as.integer(sum(!is.na(x)))}
+rmean<-function(x){mean(x,na.rm=T)}
+rmeanr<-function(x){round(mean(x,na.rm=T),2)}
+rmedian<-function(x){median(x,na.rm=T)}
+rsum<-function(x) {sum(x,na.rm=T)}
+
+```
+
+
+
+```{r create_objects}
+#summarize by interviewee: counts by gender, percents, bday, age
+byint<-btb %>% filter(year(Date)==2017) %>% group_by(interviewee.GRname,interviewee.id, interviewee.gender.use,interviewee.birthdate,Date) %>% summarise(countF=rsum(author.gender.use=="f"),countM=rsum(author.gender.use=="m"),countauth=countN(author.gender.use=="f")) %>% mutate(percF=countF/countauth,age=as.period(interval(interviewee.birthdate,Sys.Date()))$year) %>% mutate(varf=(1-percF)/countauth) %>% arrange(percF)
+
+
+#summarize by author: mentiongs, bday, age
+byauth<-btb %>% filter(year(Date)==2017) %>% group_by(author.GRname, author.gender.use,author.birthdate) %>% summarise(countFint=rsum(interviewee.gender.use=="f"),countMint=rsum(interviewee.gender.use=="m"),countment=countN(interviewee.gender.use)) %>% mutate(percF=countFint/countment,age=as.period(interval(author.birthdate,Sys.Date()))$year) %>% arrange(desc(countment))
+
+#authors with more than three mentions by date of interview
+highfreqauthbydate<-btb %>%  filter(year(Date)==2017,author.GRname %in% byauth$author.GRname[byauth$countment>3]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+
+#colors for plots
+plotcolors<-data.frame(abbr=c("f","m"),adj=c("female","male"),noun=c("women","men"),color=c("#a04646","#4661a0"),stringsAsFactors = F)
+oranges<-colorRampPalette(c("grey","orange"))
+sixoranges<-oranges(6)
+```
+
+
+
+----
+
+<div class="centered">
+```{r, out.width = "400px"}
+knitr::include_graphics("nytbrcover.jpg")
+knitr::include_graphics("btbex.jpg")
+
+```
+</div>
+
+----
+
+```{r }
+
+btb %>% filter(year(Date)==2017) %>% group_by(Interviewee_gender=interviewee.gender.use,interviewee.name) %>% summarize(count=n(),Mentions_perc_female=sum(author.gender.use=="f")/n(),perc_m=sum(author.gender.use=="m")/n(),f=sum(author.gender.use=="f")) %>% ggplot(aes(x=Interviewee_gender,y=Mentions_perc_female)) + 
+  geom_boxplot() + geom_abline(slope = 0,intercept = .5,color="darkred") +
+  geom_label(aes(x=2,y=.5,label="50%"),color="darkred") + 
+    stat_summary(fun.y=mean, geom="point", shape=20, size=5, color="darkred", fill="darkred")  + 
+  scale_x_discrete(name=element_blank(),labels=paste0(c("Women","Men"),"\n(",btb %>% filter(year(Date)==2017) %>% count(interviewee.gender.use,interviewee.GRname) %>% count(interviewee.gender.use) %>% pull(nn),")"),position="top") + labs(title="2017 By the Book Interviews:\nPercent women mentioned by gender of interviewee") +
+  scale_y_continuous(name=element_blank(),breaks=c(0,.20,.40,.6),labels=c("0%","20%","40%","60%")) +
+  theme(axis.text.x = element_text(size=10),axis.title.y = element_text(angle=0),aspect.ratio = .75)
+
+
+```
+  
+---
+
+(@) Get text of interview: </br>
+      **xml2** package (read.xml), **rvest**
+
+(@) Pull author names from text:</br>
+      Regular expressions (!!!) -  **stringr**
+
+    ``` { size="tiny"}
+    
+    str_extract_all(string = btblines[x],pattern = "((?<![“])
+    ([:upper:]{1}(\\. )?)+[:lower:]+(?=([ \\’\\'-][:upper:]{1}
+    (\\. )?)+)(?:[\\s\\’\\'-][:upper:]{1}(\\. )?[[:upper:]{1}
+    ([:lower:]\\'+)-]+)+)")
+    ```
+
+(@) Connect to goodreads & wikipedia APIs for gender & birthdate:</br>
+      **xml2**, **WikipediR**, **tidytext**
+
+(@) Analyze: **dplyr**, **ggplot**
+
+
+---
+
+<div class="centered">
+
+```{r fig.width=6,fig.height=6}
+ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])),  aes(x = intervieweelevels)) +
+         geom_bar(aes(y=byint$countF),stat = "identity",fill=plotcolors$color[1]) +
+         geom_bar(aes(y=-1*byint$countM),stat = "identity",fill=plotcolors$color[2]) + ylab("Authors mentioned by interview subject") +
+  scale_x_discrete(labels=paste(byint$interviewee.GRname[order(byint$countauth)],byint$countauth[order(byint$countauth)]),name=element_blank()) +
+  scale_y_continuous(breaks = c(-60,-40,-20,0, 20, 40),
+                     labels = (c("60","Male authors\n40","20","0", "Female authors\n20", "40")),position = "right") +
+  coord_flip() + theme(axis.text.y = element_text(size=7),axis.title.x = element_text(size=15),aspect.ratio = 1)
+```
+</div>
+---
+<div class="centered">
+```{r}
+ggplot(byint,aes(x=interviewee.birthdate,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() +scale_color_manual(values=plotcolors$color, name="interviewee\ngender") + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)},limits = c(0,1)) + labs(title="Percent women mentioned by birthdate and gender of interviewee") + theme(axis.title.x = element_text(size=15))
+```
+</div>
+
+
+  
+
+
