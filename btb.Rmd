@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = F,message = F,warning = F)
 ```
 
-```{r load_packages}
+```{r load_packages, warning=F}
 library("lubridate")
 library("tidyverse")
 library("knitr")
@@ -31,6 +31,8 @@ rsum<-function(x) {sum(x,na.rm=T)}
 
 ```{r load_data}
 load(file = "/Users/srhrnkn/Documents/authors/btb.Rdata")
+#filter to 2017
+btb<-btb %>% filter(year(Date)==2017)
 ```
 
 
@@ -74,7 +76,7 @@ caldata$monthlabel[caldata$m==lag(caldata$m)]<-""
 ggplot(data =caldata ) + 
   geom_tile(aes(fill = interviewee.gender.use,x=1,y=rev(rnk)),color="black")  + 
   theme_classic() + theme(aspect.ratio = 3,axis.ticks = element_blank(),line = element_blank(),axis.title.x = element_blank(),axis.text.x = element_blank()) + 
-  scale_y_continuous(breaks = caldata$rnk,labels=rev(paste(caldata$monthlabel,as.character(caldata$d))),name = element_blank()) + guides(fill=F) + 
+  scale_y_continuous(breaks = caldata$rnk,labels=rev(paste(caldata$monthlabel,as.character(caldata$d))),name = element_blank(),expand = c(0,0)) + guides(fill=F) + 
   scale_fill_manual(values = plotcolors$color) +
   geom_text(aes(x=1,y=rev(rnk),label=interviewee.GRname)) + 
   facet_wrap(~rnk>length(rnk)/2,nrow = 1,ncol = 2,scales = "free") + 
@@ -102,7 +104,7 @@ btb %>% group_by(interviewee.gender.use) %>% count(author.gender.use) %>% mutate
   
   
   
-But there is wide variation among interviewees in the total number of authors mentioned & in the gender split. 
+But there is plenty of variation among interviewees in the total number of authors mentioned & in the gender split. 
   
   
   
@@ -110,18 +112,17 @@ But there is wide variation among interviewees in the total number of authors me
 ```{r}
 ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])),  aes(x = intervieweelevels)) +
          geom_bar(aes(y=byint$countF),stat = "identity",fill=plotcolors$color[1]) +
-         geom_bar(aes(y=-1*byint$countM),stat = "identity",fill=plotcolors$color[2]) +
-  xlab("Interviewees") + ylab("Author mentions") +
-  scale_x_discrete(labels=paste(byint$interviewee.GRname[order(byint$countauth)],byint$countauth[order(byint$countauth)])) +
-  scale_y_continuous(breaks = seq(-40, 40, 20),
-                     labels = as.character(abs(seq(-40, 40, 20)))) +
-  coord_flip()
+         geom_bar(aes(y=-1*byint$countM),stat = "identity",fill=plotcolors$color[2]) + ylab("Authors mentioned by interview subject") +
+  scale_x_discrete(labels=paste(byint$interviewee.GRname[order(byint$countauth)],byint$countauth[order(byint$countauth)]),name=element_blank()) +
+  scale_y_continuous(breaks = c(-60,-40,-20,0, 20, 40),
+                     labels = (c("60","Male authors\n40","20","0", "Female authors\n20", "40")),position = "right") +
+  coord_flip() + theme(axis.text.y = element_text(size=7),axis.title.x = element_text(size=15),aspect.ratio = 1)
 ```
   
   
   
   
-Older interviewees are both more likely to be male (**`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="m") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of male interviewees were born before 1960, vs **`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="f") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of female interviewees) and more likely to have recommended a lower percentage of female authors. 
+Older interviewees are both more likely to be male (**`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="m") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of male interviewees were born before 1960, vs **`r 100*rmeanr(byint %>% filter(interviewee.gender.use=="f") %>%  select("interviewee.birthdate") %>% transmute(old=year(interviewee.birthdate)<1960) %>% pull())`%** of female interviewees) and slightly more likely to have recommended a lower percentage of female authors. 
   
   
   
