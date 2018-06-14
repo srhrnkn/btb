@@ -13,7 +13,7 @@ The New York Times Book Review's "By the Book" feature is a weekly interview exp
 
 There were a total of **22** female interviewees and **30** male interviewees.
 
-![](btb_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](btb_files/figure-markdown_github/Cal.png)
 
 Male interviewees are more likely to mention male authors. Female interviewees mention men and women at about the same rate.
 
