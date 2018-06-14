@@ -101,28 +101,82 @@ btb %>% filter(year(Date)==2017) %>% group_by(Interviewee_gender=interviewee.gen
 (@) Analyze: **dplyr**, **ggplot**
 
 
+
 ---
 
-<div class="centered">
-
-```{r fig.width=6,fig.height=6}
-ggplot(byint %>% mutate(intervieweelevels=factor(interviewee.GRname,levels=byint$interviewee.GRname[order(byint$countauth)])),  aes(x = intervieweelevels)) +
-         geom_bar(aes(y=byint$countF),stat = "identity",fill=plotcolors$color[1]) +
-         geom_bar(aes(y=-1*byint$countM),stat = "identity",fill=plotcolors$color[2]) + ylab("Authors mentioned by interview subject") +
-  scale_x_discrete(labels=paste(byint$interviewee.GRname[order(byint$countauth)],byint$countauth[order(byint$countauth)]),name=element_blank()) +
-  scale_y_continuous(breaks = c(-60,-40,-20,0, 20, 40),
-                     labels = (c("60","Male authors\n40","20","0", "Female authors\n20", "40")),position = "right") +
-  coord_flip() + theme(axis.text.y = element_text(size=7),axis.title.x = element_text(size=15),aspect.ratio = 1)
-```
-</div>
----
 <div class="centered">
 ```{r}
-ggplot(byint,aes(x=interviewee.birthdate,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() +scale_color_manual(values=plotcolors$color, name="interviewee\ngender") + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)},limits = c(0,1)) + labs(title="Percent women mentioned by birthdate and gender of interviewee") + theme(axis.title.x = element_text(size=15))
+ggplot(byint,aes(x=interviewee.birthdate,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() +scale_color_manual(values=plotcolors$color, name="interviewees",labels=c("Women","Men")) + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)},limits = c(0,1)) + labs(title="Percent women mentioned by birthdate and gender of interviewee") + theme(axis.title.x = element_text(size=15))
 ```
 </div>
 
+---
 
+<div class="centered">
+```{r}
+ggplot(byint,aes(x=interviewee.birthdate,y = percF,color=interviewee.gender.use,size=countauth)) +geom_point() + geom_smooth(method = "lm",se = F,show.legend = F) + scale_color_manual(values=plotcolors$color, name="interviewees",labels=c("Women","Men")) + scale_size(name="authors\nmentioned") + ylab("Female authors mentioned (percent)") + xlab("Interviewee birthdate") +scale_y_continuous(labels = function(x){as.character(100*x)},limits = c(0,1)) + labs(title="Percent women mentioned by birthdate and gender of interviewee") + theme(axis.title.x = element_text(size=15))
+```
+</div>
+
+---
+
+```{r}
+#make df
+heatmapint <- btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>0]) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+heatmapint <- full_join(x = heatmapint[,c("author","interviewee.GRname")],y = heatmapint[,c("author","interviewee.GRname")],by = "author" )
+#rearrange columns and delete entries where x and y are same 
+heatmapint$Weight<-1
+#heatmapint$Weight[which(heatmapint$interviewee.GRname.y==heatmapint$interviewee.GRname.x)]<-NA
+
+#set upper half to NA (getting rid of this, it's nice to be able to see full rows for everyone)
+#heatmapint$Weight[match(heatmapint$interviewee.x, heatmaplevels)<match(heatmapint$interviewee.y, heatmaplevels)]<-NA
+
+#data for plot - sum weight by interview mentions
+heatmapintplot<-heatmapint %>% group_by(interviewee.GRname.x,interviewee.GRname.y) %>% summarize(Weight=sum(Weight))
+#create levels to sort in order of most appearances (pull turns this back into a character vector)
+heatmapintlevels<-heatmapintplot  %>% group_by(interviewee.GRname.x) %>% summarize(n=max(Weight)) %>% arrange(desc(n)) %>% select(interviewee.GRname.x) %>% transmute(levels=as.character(interviewee.GRname.x)) %>% pull()
+heatmapintplot$interviewee.x<-factor(heatmapintplot$interviewee.GRname.x,levels = heatmapintlevels)
+heatmapintplot$interviewee.y<-factor(heatmapintplot$interviewee.GRname.y,levels = heatmapintlevels)
+#pull out total authors mentioned as separate character var to plot on diagonal
+heatmapintplot$authtotal<-as.character(heatmapintplot$Weight)
+heatmapintplot$authtotal[which(heatmapintplot$interviewee.y!=heatmapintplot$interviewee.x)]<-NA
+heatmapintplot$Weight[which(heatmapintplot$interviewee.y==heatmapintplot$interviewee.x)]<-NA
+```
   
+```{r}
+  
+
+#make df
+heatmapauth <- btb %>%  filter(author.GRname %in% byauth$author.GRname[byauth$countment>3],year(Date)==2017) %>% select(author.GRname, interviewee.GRname, Date, interviewee.gender.use) %>% left_join(byauth[,c("author.GRname","countment")]) %>% arrange(desc(countment),author.GRname,Date) %>% mutate(author=factor(author.GRname,levels = rev(unique(author.GRname))))
+heatmapauth <- full_join(x = heatmapauth[,c("author","interviewee.GRname")],y = heatmapauth[,c("author","interviewee.GRname")],by = "interviewee.GRname" )
+#rearrange columns and delete entries where x and y are same 
+heatmapauth$Weight<-1
+#heatmapauth$Weight[which(heatmapauth$author.y==heatmapauth$author.x)]<-NA
+heatmaplevels<-heatmapauth  %>% group_by(author.x) %>% tally() %>% arrange(desc(n)) %>% select(author.x) %>% transmute(levels=as.character(author.x)) %>% pull()
+heatmapauth$author.x<-factor(heatmapauth$author.x,levels = heatmaplevels)
+heatmapauth$author.y<-factor(heatmapauth$author.y,levels = heatmaplevels)
+#create levels to sort in order of most appearances (pull turns this back into a character vector)
+
+heatmapauthplot<-heatmapauth %>% group_by(author.x,author.y) %>% summarise(Weight=sum(Weight))
+
+heatmapauthplot$mentiontotal<-as.character(heatmapauthplot$Weight)
+heatmapauthplot$mentiontotal[which(heatmapauthplot$author.y!=heatmapauthplot$author.x)]<-NA
+heatmapauthplot$Weight[which(heatmapauthplot$author.y==heatmapauthplot$author.x)]<-NA
+
+```
+
+
+
+Top Authors Mentioned Together
+
+George Saunders  &  Lin-Manuel Miranda <br>
+Ann Patchett  &  Zadie Smith <br>
+Colson Whitehead  &  James Baldwin<br>
+Colson Whitehead  &  Zadie Smith<br>
+David Sedaris  &  George Saunders<br>
+Elena Ferrante  &  George Eliot<br>
+Ernest Hemingway  &  F. Scott Fitzgerald <br>
+James Baldwin  &  Ta-Nehisi Coates <br>
+</div>
 
 
